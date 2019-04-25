@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#Path to swiftlint
+SWIFT_LINT=/usr/local/bin/swiftlint
+
+#if $SWIFT_LINT >/dev/null 2>&1; then
+if [[ -e "${SWIFT_LINT}" ]]; then
+    ./run_swiftlint.sh
+else
+#### If SwiftLint is not installed, do not allow commit
+
+    echo "If you have Homebrew, you can directly use `brew install swiftlint` to install SwiftLint"
+    exit 1
+fi
