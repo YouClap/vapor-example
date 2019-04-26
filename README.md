@@ -1,4 +1,4 @@
-# Vapor template for services
+# Vapor Example
 
 [![Swift 5.0](https://img.shields.io/badge/Swift-5.0-orange.svg?style=flat)](https://developer.apple.com/swift/)
 [![Vapor 3.3.0](https://img.shields.io/badge/Vapor-3.3.0-blueviolet.svg?style=flat)](https://github.com/vapor/vapor)
@@ -8,36 +8,7 @@
 
 ⚠️  Under development... 🚧
 
-## Requirements
-
-You must have vapor toolbox installed to use this template, at least it helps.
-
-### For macOS
-
-[Vapor docs](https://docs.vapor.codes/3.0/install/macos/)
-
-Assuming you have Xcode installed, or swift setted up on your machine, run:
-
-```
-brew tap vapor/tap
-brew install vapor/tap/vapor
-```
-
-### For Ubuntu
-
-[Vapor docs](https://docs.vapor.codes/3.0/install/ubuntu/)
-
-Assuming you have swift installed and configured on your machine, follow the following steps to install vapor
-
-Add APT repo
-
-`eval "$(curl -sL https://apt.vapor.sh)"`
-
-Install vapor
-
-`sudo apt-get install swift vapor`
-
-## Using this template
+## Using this example
 
 Vapor toolbox allows to start a new project by cloning a template
 

@@ -1,4 +1,3 @@
-import Authentication
 import Vapor
 
 /// Called before your application initializes.

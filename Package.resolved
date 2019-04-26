@@ -114,8 +114,8 @@
         "repositoryURL": "https://github.com/vapor/template-kit.git",
         "state": {
           "branch": null,
-          "revision": "4b1073d74be9f5c6a5bc63a07a84e83efec26229",
-          "version": "1.1.2"
+          "revision": "121ae51433df94cf6e15c09e1f1b0f7c77ff8d5c",
+          "version": "1.2.0"
         }
       },
       {
