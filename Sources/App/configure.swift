@@ -11,4 +11,11 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
     middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
     services.register(middlewares)
+
+    let cassandraConfiguration = CassandraConfiguration(host: "localhost", port: 32772)
+    let remoteStack = CassandraRemoteStack(cassandraConfiguration: cassandraConfiguration)
+    let store = Store(remoteStack: remoteStack)
+    services.register(store)
 }
+
+extension Store: Vapor.Service {}

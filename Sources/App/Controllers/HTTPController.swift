@@ -1,12 +1,13 @@
 import Vapor
+import ReactiveSwift
 
 final class HTTPController: RouterController {
 
-//    private let businessLogic:
-//
-//    init(businessLogic) {
-//        self.businessLogic = businessLogic
-//    }
+    private let service: ServiceRepresentable
+
+    init(service: ServiceRepresentable) {
+        self.service = service
+    }
 
     func boot(router: Router) throws {
         let users = router.grouped("user")
@@ -18,24 +19,28 @@ final class HTTPController: RouterController {
 
     // MARK: - CRUD Methods
 
-    private func index(_ request: Request) throws -> Future<User> {
+    // NOTE: We can return a SignalProducer, but perhaps we could return a Future
+    // to have a uniform API
+    private func index(_ request: Request) throws -> SignalProducer<User, Error> {
         let uid = try userID(from: request)
 
-        return request.future(User(uid: uid, name: "a", age: 1, gender: .undefined))
+        return service.user(with: uid)
+            .mapError(Error.service)
     }
 
     private func create(_ request: Request, user: User.Create) throws -> Future<Response> {
-        return User(uid: UUID().uuidString, name: user.name, age: user.age, gender: user.gender)
+        return service.create(user: user)
+            .mapError(Error.service)
             .encode(status: .created, for: request)
     }
 
-    private func delete(_ request: Request) throws -> Future<HTTPStatus> {
+    private func delete(_ request: Request) throws -> Future<Response> {
         let uid = try userID(from: request)
 
-        print("deleting user with UID \(uid) 👋")
-
-        // TODO: Check for userID in the database
-        return request.future(.ok)
+        return try service.delete(user: uid)
+            .map { _ in HTTPStatus.ok }
+            .mapError(Error.service)
+            .encode(for: request)
     }
 
     // MARK: - Private Methods
@@ -46,5 +51,42 @@ final class HTTPController: RouterController {
         }
 
         return userID
+    }
+}
+
+extension HTTPController {
+    enum Error: Swift.Error {
+        case service(Service.Error)
+    }
+}
+
+// MARK: - Debuggable
+
+extension Service.Error: Debuggable {
+    var identifier: String {
+        switch self {
+        case .missingUser: return "MISSING_USER"
+        }
+    }
+
+    var reason: String {
+        switch self {
+        case .missingUser(let userID):
+            return "user \(userID) not found"
+        }
+    }
+}
+
+extension HTTPController.Error: Debuggable {
+    var identifier: String {
+        switch self {
+        case .service(let serviceError): return serviceError.identifier
+        }
+    }
+
+    var reason: String {
+        switch self {
+        case .service(let serviceError): return serviceError.reason
+        }
     }
 }
