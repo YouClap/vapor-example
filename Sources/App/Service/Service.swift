@@ -4,12 +4,12 @@ import ReactiveSwift
 final class Service: ServiceRepresentable {
     func create(user: User.Create) -> SignalProducer<User, Service.Error> {
         return SignalProducer { observer, _ in
-            observer.send(value: User(uid: UUID().uuidString, name: user.name, age: user.age, gender: user.gender))
+            observer.send(value: User(id: nil, name: user.name, age: user.age, gender: user.gender))
             observer.sendCompleted() // NOTE: You have call completed to stop terminate the stream
         }
     }
 
-    func user(with userUID: User.UID) -> SignalProducer<User, Service.Error> {
+    func user(with userUID: User.ID) -> SignalProducer<User, Service.Error> {
         return SignalProducer { observer, _ in
             print("🤔 searching for user with \(userUID)")
 
@@ -20,7 +20,7 @@ final class Service: ServiceRepresentable {
         }
     }
 
-    func delete(user userUID: User.UID) -> SignalProducer<Void, Service.Error> {
+    func delete(user userUID: User.ID) -> SignalProducer<Void, Service.Error> {
         return SignalProducer { observer, _ in
             print("deleting user with UID \(userUID) 👋")
 
@@ -32,6 +32,6 @@ final class Service: ServiceRepresentable {
 
 extension Service {
     enum Error: Swift.Error {
-        case missingUser(User.UID)
+        case missingUser(User.ID)
     }
 }

@@ -12,41 +12,55 @@ final class HTTPController: RouterController {
     func boot(router: Router) throws {
         let users = router.grouped("user")
 
-        users.get("/", User.UID.parameter, use: index)
+        users.get("/", User.ID.parameter, use: index)
         users.post(User.Create.self, at: "/", use: create)
-        users.delete("/", User.UID.parameter, use: delete)
+        users.delete("/", User.ID.parameter, use: delete)
     }
 
     // MARK: - CRUD Methods
 
     // NOTE: We can return a SignalProducer, but perhaps we could return a Future
     // to have a uniform API
-    private func index(_ request: Request) throws -> SignalProducer<User, Error> {
+    private func index(_ request: Request) throws -> Future<User> {
         let uid = try userID(from: request)
 
-        return service.user(with: uid)
-            .mapError(Error.service)
+        return User.find(uid, on: request).map {
+            guard let user = $0 else { throw Abort(.notFound) }
+            return user
+        }
+
+//        return service.user(with: uid)
+//            .mapError(Error.service)
     }
 
     private func create(_ request: Request, user: User.Create) throws -> Future<Response> {
-        return service.create(user: user)
-            .mapError(Error.service)
-            .encode(status: .created, for: request)
+        let user = User(id: nil, name: user.name, age: user.age, gender: user.gender)
+
+        return user.save(on: request).encode(status: .created, for: request)
+//        return service.create(user: user)
+//            .mapError(Error.service)
+//            .encode(status: .created, for: request)
     }
 
-    private func delete(_ request: Request) throws -> Future<Response> {
+    private func delete(_ request: Request) throws -> Future<HTTPStatus> {
         let uid = try userID(from: request)
 
-        return try service.delete(user: uid)
-            .map { _ in HTTPStatus.ok }
-            .mapError(Error.service)
-            .encode(for: request)
+        return User.find(uid, on: request).flatMap { user -> Future<Void> in
+            guard let user = user else { throw Abort(.notFound) }
+
+            return user.delete(on: request)
+        }.transform(to: .ok)
+
+//        return try service.delete(user: uid)
+//            .map { _ in HTTPStatus.ok }
+//            .mapError(Error.service)
+//            .encode(for: request)
     }
 
     // MARK: - Private Methods
 
-    private func userID(from request: Request) throws -> User.UID {
-        guard let userID = try? request.parameters.next(User.UID.self) else {
+    private func userID(from request: Request) throws -> User.ID {
+        guard let userID = try? request.parameters.next(User.ID.self) else {
             throw Abort(.notFound)
         }
 
