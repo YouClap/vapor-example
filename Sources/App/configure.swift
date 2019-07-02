@@ -2,13 +2,11 @@ import FluentMySQL
 import Vapor
 
 /// Called before your application initializes.
-public func configure(_ config: inout Config, _ env: inout Environment, _ services: inout Services) throws {
-    try services.register(FluentMySQLProvider())
+public func configure(_ env: Environment) throws -> (Config, Services) {
+    let config = Config.default()
+    var services = Services.default()
 
-    // Register routes to the router
-    let router = EngineRouter.default()
-    try routes(router)
-    services.register(router, as: Router.self)
+    try services.register(FluentMySQLProvider())
 
     // Register middleware
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
@@ -18,7 +16,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     // Configure MySQL
     // TODO: change later to support environments
     let mysqlDatabaseConfig = MySQLDatabaseConfig(hostname: "127.0.0.1",
-                                                  port: 32773,
+                                                  port: 32768,
                                                   username: "root",
                                                   password: "youclap-sql-pw",
                                                   database: "youclap-dev",
@@ -32,4 +30,22 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     var migrations = MigrationConfig()
     migrations.add(model: User.self, database: .mysql)
     services.register(migrations)
+
+    services.register(DatabaseConnectionPoolConfig(maxConnections: 8))
+
+    // After all the services registered, configure router
+    services.register { (container) -> (UserService) in
+        let mysqlDatabaseConnectable = MySQLDatabaseConnectable(container: container.subContainer(on: container))
+        let store = UserStore(databaseConnectable: mysqlDatabaseConnectable)
+        return UserService(store: store)
+    }
+
+    // Register routes to the router
+    services.register(Router.self) { (container) -> (EngineRouter) in
+        let router = EngineRouter.default()
+        try routes(router, container)
+        return router
+    }
+
+    return (config, services)
 }

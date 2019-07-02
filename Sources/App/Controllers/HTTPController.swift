@@ -1,11 +1,13 @@
+import Fluent
+import FluentMySQL
 import Vapor
 import ReactiveSwift
 
 final class HTTPController: RouterController {
 
-    private let service: ServiceRepresentable
+    private let service: UserServiceRepresentable
 
-    init(service: ServiceRepresentable) {
+    init(service: UserServiceRepresentable) {
         self.service = service
     }
 
@@ -21,35 +23,27 @@ final class HTTPController: RouterController {
 
     // NOTE: We can return a SignalProducer, but perhaps we could return a Future
     // to have a uniform API
-    private func index(_ request: Request) throws -> Future<User> {
+    private func index(_ request: Request) throws -> Future<Response> {
         let uid = try userID(from: request)
 
-        return User.find(uid, on: request).map {
-            guard let user = $0 else { throw Abort(.notFound) }
-            return user
-        }
-
-//        return service.user(with: uid)
-//            .mapError(Error.service)
+        return try service.user(with: uid)
+            .mapError(Error.service)
+            .encode(for: request)
     }
 
     private func create(_ request: Request, user: User.Create) throws -> Future<Response> {
-        let user = User(id: nil, name: user.name, age: user.age, gender: user.gender)
-
-        return user.save(on: request).encode(status: .created, for: request)
-//        return service.create(user: user)
-//            .mapError(Error.service)
-//            .encode(status: .created, for: request)
+        return service.create(user: user)
+            .mapError(Error.service)
+            .encode(status: .created, for: request)
     }
 
-    private func delete(_ request: Request) throws -> Future<HTTPStatus> {
+    private func delete(_ request: Request) throws -> Future<Response> {
         let uid = try userID(from: request)
 
-        return User.find(uid, on: request).flatMap { user -> Future<Void> in
-            guard let user = user else { throw Abort(.notFound) }
-
-            return user.delete(on: request)
-        }.transform(to: .ok)
+        return try service.delete(user: uid)
+            .mapError(Error.service)
+            .map { _ in HTTPStatus.ok }
+            .encode(for: request)
 
 //        return try service.delete(user: uid)
 //            .map { _ in HTTPStatus.ok }
@@ -70,16 +64,18 @@ final class HTTPController: RouterController {
 
 extension HTTPController {
     enum Error: Swift.Error {
-        case service(Service.Error)
+        case service(UserService.Error)
     }
 }
 
 // MARK: - Debuggable
 
-extension Service.Error: Debuggable {
+// TODO: Improve error representation to provide more information
+extension UserService.Error: Debuggable {
     var identifier: String {
         switch self {
         case .missingUser: return "MISSING_USER"
+        case .store: return "STORE"
         }
     }
 
@@ -87,6 +83,7 @@ extension Service.Error: Debuggable {
         switch self {
         case .missingUser(let userID):
             return "user \(userID) not found"
+        case .store(let error): return error.localizedDescription
         }
     }
 }
