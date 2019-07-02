@@ -1,5 +1,5 @@
+import Foundation
 import ReactiveSwift
-import Vapor
 
 //final class UserService<Store>: UserServiceRepresentable where Store: UserStoreRepresentable {
 // TODO: Change this to work with store representation instead of UserStore class
